@@ -103,10 +103,10 @@ def make_pc1_density_video(
             writer = FFMpegWriter(fps=fps, bitrate=2400, extra_args=["-vcodec", "libx264"])
         except Exception as e:
             raise RuntimeError(
-                "Saving MP4 requires FFmpeg. Install it"
-                "`sudo apt-get install ffmpeg'"
+                "Saving MP4 requires FFmpeg."
             ) from e
         anim.save(out_path, writer=writer, dpi=150)
+
     elif ext == ".gif":
         writer = PillowWriter(fps=fps)
         anim.save(out_path, writer=writer, dpi=150)
@@ -214,29 +214,19 @@ def plot_average_profile_after_frame(dat_path,
 def pca_coordinates_per_frame(dat_path,
     align_directions=True,
     enforce_right_handed=True,
-    weights=None,
     whiten=False,
 ):
     times, centroids, components, eigenvalues, ratios, coords_pca = [], [], [], [], [], []
     prev_U = None
-    n_ref = None
+
 
     with open(dat_path, "r") as f:
         for t, R in hf.parse_frame_positions(f):
             N = R.shape[0]
-            if weights is not None:
-                if n_ref is None:
-                    n_ref = N
-                elif N != n_ref:
-                    raise ValueError("weights require constant particle count per frame.")
-                if len(weights) != N:
-                    raise ValueError(f"weights length {len(weights)} != particle count {N}")
-                c, C = hf.weighted_center_and_cov(R, weights)
-            else:
-                c = R.mean(axis=0)
-                X = R - c
-                C = np.cov(X.T, bias=False)
 
+            c = R.mean(axis=0)
+            X = R - c
+            C = np.cov(X.T, bias=False)
             evals, evecs = np.linalg.eigh(C)
             idx = np.argsort(evals)[::-1]
             lam = evals[idx]
@@ -253,7 +243,7 @@ def pca_coordinates_per_frame(dat_path,
                 U[:, 2] *= -1.0
 
             Xc = R - c
-            S = Xc @ U  # (N,3)
+            S = Xc @ U
             if whiten:
                 eps = 1e-12
                 scale = 1.0 / np.sqrt(np.maximum(lam, eps))
